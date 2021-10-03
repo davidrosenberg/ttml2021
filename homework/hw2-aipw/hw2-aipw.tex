@@ -62,7 +62,7 @@ stepnumber=1,
 stringstyle={\color{mymauve}},
 tabsize=2}
 \begin{document}
-\input{my_macros_paper.tex}
+\input{../../common/my_macros_paper.tex}
 \title{Tools and Techniques for Machine Learning\\
 Homework 2: Regression imputation, covariate shift, and control variates}
 
@@ -100,7 +100,7 @@ by the generalized form of Adam's Law. This implies that
 \]
 
 
-\section{Complete case mean - unbiased or what?}
+\section{Complete case mean is unbiased for MCAR (when it's defined)}
 
 Let $R_{i}\in\left\{ 0,1\right\} $ be the response indicator, $Y_{i}\in\reals$
 the response. Consider the MCAR setting, in which $R_{i}\indep Y_{i}$,
@@ -123,23 +123,23 @@ after ruling out the case where it's undefined.
 
 \section{Regression imputation with $\protect\ex\left[Y\mid X=x\right]$ }
 
-Consider the MAR setting. In regression imputation, we fit a regression
-function $\hat{f}(x)$ to the complete cases, and the regression imputation
-estimator for $\ex Y$ is given by
+Consider the MAR setting. Let $\hat{f}(x)$ be a regression function
+fit to the complete cases. Then the regression imputation estimator
+for $\ex Y$ that we defined in class is given by
 \[
-\hat{\mu}_{\hat{f}}=\frac{1}{n}\sum_{i=1}^{n}\left[R_{i}Y_{i}+\left(1-R_{i}\right)\hat{f}(X_{i})\right].
+\hat{\mu}_{\hat{f}}:=\frac{1}{n}\sum_{i=1}^{n}\left[R_{i}Y_{i}+\left(1-R_{i}\right)\hat{f}(X_{i})\right].
 \]
-There is also an alternative form of regression imputation where we
-apply $\hat{f}(x)$ to all the $X_{i}$'s, not just the incomplete
-cases. This estimator is given by
+There is an alternative form of regression imputation where we apply
+$\hat{f}(x)$ to all the $X_{i}$'s, not just the incomplete cases.
+This estimator is given by
 \[
-\hat{\mu}_{\hat{f}\text{-full}}=\frac{1}{n}\sum_{i=1}^{n}\hat{f}(X_{i}).
+\hat{\mu}_{\hat{f}\text{-full}}:=\frac{1}{n}\sum_{i=1}^{n}\hat{f}(X_{i}).
 \]
-In this problem, we want to verify that, if we use $\ex\left[Y\mid X=x\right]$
-for our regression imputation, our regression imputation estimators
-are unbiased. This will give us some hope that, under the appropriate
-technical conditions, if our model is well-specified, then regression
-imputation is consistent.
+In this problem, we will verify that if we use $\ex\left[Y\mid X=x\right]$
+for our regression imputation, then both of these regression imputation
+estimators are unbiased. This will give us some hope that, under the
+appropriate technical conditions, if our model is well-specified,
+then each method of regression imputation is consistent.
 \begin{enumerate}
 \item If $f(x)=\ex\left[Y\mid X=x\right],$show that $\ex\left[\hat{\mu}_{f\text{-full}}\right]=\ex Y$.
 
@@ -149,8 +149,26 @@ for inspiration, and you'll also need to use the MAR assumption that
 $Y_{i}\indep R_{i}\mid X_{i}$.)
 
  
-\end{enumerate}
+\item If we expand out the two forms of the imputation estimator for a particular
+set of observed data, we might get something like
+\begin{eqnarray*}
+\hat{\mu}_{\hat{f}} & = & \frac{1}{n}\left(Y_{1}+Y_{2}+\hat{f}(X_{3})+Y_{4}+\hat{f}(X_{5})+\cdots+Y_{n}\right)\\
+\hat{\mu}_{\hat{f}\text{-full}} & = & \frac{1}{n}\left(\hat{f}(X_{1})+\hat{f}(X_{2})+\hat{f}(X_{3})+\hat{f}(X_{4})+\hat{f}(X_{5})+\cdots+\hat{f}(X_{n})\right).
+\end{eqnarray*}
+Written in this way, it's easy to see that $\hat{\mu}_{\hat{f}\text{-full}}$
+and $\hat{\mu}_{\hat{f}}$ differ only in how they handle the complete
+cases. We generally do not expect to have $\hat{f}(X_{i})=Y_{i}$
+for all the compete cases -- that would indicate overfitting of our
+imputation function. Nevertheless, you might be surprised to learn
+that $\hat{\mu}_{\hat{f}}=\hat{\mu}_{\hat{f}\text{-full}}$ in some
+common scenarios. Show that $\hat{\mu}_{\hat{f}\text{-full}}=\hat{\mu}_{\hat{f}}$
+if we fit the regression function $\hat{f}(x)$ to the complete cases
+using a linear model with intercept: 
+\[
+\hat{f}=\argmin_{\left\{ f:f(x)=a+w^{T}x\right\} }\sum_{i=1}^{n}R_{i}(f(X_{i})-Y_{i})^{2}.
+\]
 
+\end{enumerate}
 
 \section{A family of simple AIPW estimators}
 
@@ -158,15 +176,21 @@ $Y_{i}\indep R_{i}\mid X_{i}$.)
 in Homework \#1.)
 
 Suppose $\cd$ represents the dataset $(X_{1},R_{1},R_{1}Y_{1}),\ldots,(X_{n},R_{n},R_{n}Y_{n})$
-from a MAR setting. For any $a\in\reals$, we'll write $\cd+a$ for
-the dataset $(X_{1},R_{1},R_{1}\left(Y_{1}+a\right)),\ldots,(X_{n},R_{n},R_{n}\left(Y_{n}+a\right))$,
+from a MAR setting. For any $a\in\reals$, we'll write $\cd-a$ for
+the dataset $(X_{1},R_{1},R_{1}\left(Y_{1}-a\right)),\ldots,(X_{n},R_{n},R_{n}\left(Y_{n}-a\right))$,
 which is the same as $\cd$, but with each $Y$ value shifted by $a$.
-Recall the definition of the estimator $\hat{\mu}_{\ipw}(\cd)=\frac{1}{n}\sum_{i=1}^{n}\frac{R_{i}Y_{i}}{\pi(X_{i})}$.
-For any $a\in\reals$, define a new estimator $\hat{\mu}_{\ipw-a}=\hat{\mu}_{\ipw-a}(\cd):=\hat{\mu}_{\ipw}(\cd+a)-a$.
-In the last homework, we showed that $\hat{\mu}_{\ipw}(\cd+a)=\hat{\mu}_{\ipw}(\cd)+\frac{a}{n}\sum_{i=1}^{n}\frac{R_{i}}{\pi(X_{i})}$
-and that $\ex\hat{\mu}_{\ipw-a}(\cd)=\ex Y$. 
+Recall the following estimators:
+\begin{eqnarray*}
+\hat{\mu}_{\ipw}=\hat{\mu}_{\ipw}(\cd) & := & \frac{1}{n}\sum_{i=1}^{n}\frac{R_{i}Y_{i}}{\pi(X_{i})}\\
+\hat{\mu}_{\ipw,a}=\hat{\mu}_{\ipw,a}(\cd) & := & \hat{\mu}_{\ipw}(\cd-a)+a,
+\end{eqnarray*}
+for any $a\in\reals$. In the last homework, we showed that 
+\[
+\hat{\mu}_{\ipw}(\cd-a)=\hat{\mu}_{\ipw}(\cd)-\frac{a}{n}\sum_{i=1}^{n}\frac{R_{i}}{\pi(X_{i})}
+\]
+ and that $\ex\hat{\mu}_{\ipw,a}(\cd)=\ex Y$. 
 \begin{enumerate}
-\item We can view $\hat{\mu}_{\ipw-a}$ as an augmented IPW (AIPW) estimator
+\item We can view $\hat{\mu}_{\ipw,a}$ as an augmented IPW (AIPW) estimator
 -{}- that is, as a control-variate adjusted IPW estimator. With this
 view, what is the control variate and what is its expectation?
 
@@ -187,7 +211,7 @@ We have a budget to call $n$ people and ask who they'll vote for.
 Each individual $i$ is described by the following random variables:
 \begin{eqnarray*}
 X_{i}\in\cx &  & \text{covariates describing individual \ensuremath{i}}\\
-T_{i}\in\left\{ 0,1\right\}  &  & \text{indicator for whether \ensuremath{i} will vote ("turnout indicator")}\\
+T_{i}\in\left\{ 0,1\right\}  &  & \text{indicator for whether \ensuremath{i} will vote in the election ("turnout indicator")}\\
 R_{i}\in\left\{ 0,1\right\}  &  & \text{indicator for whether \ensuremath{i} will respond to a survey question if called}\\
 Y_{i}\in\left\{ 0,1\right\}  &  & \text{indicator for which candidate an individual will vote for, if they vote}
 \end{eqnarray*}
@@ -220,12 +244,12 @@ since it's not clear there are any high quality labels to fit a model
 to. But we'll assume that somebody else has already solved this problem
 for us.}.
 \item We have access to a function $\pi_{r}(x)=\pr\left(R=1\mid X=x\right)$
-that gives the ``response probability.'' This can be estimated using
-the observed data with a simple probabilistic classifier, such as
-logistic regression, but we'll also assume this part of the problem
-has already been solved. 
+that gives the ``response probability.'' This can function be estimated
+using the observed data using, for example, logistic regression. But
+we'll also assume that this part of the problem has already been solved
+and we know $\pi_{r}(x)$. 
 \item Every voter has at least some chance of responding to a survey. To
-put in mathematical terms: $\pi_{t}(x)>0\implies\pi_{r}(x)>0\quad\forall x\in\cx$. 
+put this in mathematical terms: $\pi_{t}(x)>0\implies\pi_{r}(x)>0\quad\forall x\in\cx$. 
 \end{enumerate}
 To forecast the election, we want to estimate $\pr\left(Y=1\mid T=1\right)$,
 i.e. the rate of voting for candidate $1$ among individuals who actually
@@ -233,7 +257,7 @@ go vote. In this problem, we'll use a variant of regression imputation
 that accounts for the covariate shift between the survey respondent
 distribution and the voter distribution.
 
-\subsection{Fitting the regression}
+\subsection{\label{subsec:Fitting-the-regression}Fitting the regression}
 
 If we fit a model to the survey responses (i.e. the complete cases,
 i.e. the $\left(X_{i},Y_{i}\right)$ pairs corresponding to $R_{i}=1$)
@@ -247,25 +271,30 @@ i.e. to have low risk w.r.t. the distribution $p(x,y\mid T=1)$.
 \item If we're fitting $\hat{f}(x)$ to data from $p(x,y\mid R=1)$ (without
 importance weighting), then we expect $\hat{f}(x)\approx\ex\left[Y\mid X=x,R=1\right]$.
 And if we could fit $\hat{f}(x)$ to data from $p(x,y\mid T=1)$ then
-we would have $\hat{f}(x)\approx\ex\left[Y\mid X=x,T=1\right]$. We've
-assumed that $Y\indep T\mid X$ and $Y\indep R\mid X$, which implies
-$\ex\left[Y\mid X=x,R=1\right]=\ex\left[Y\mid X=x,T=1\right]=\ex\left[Y\mid X=x\right]$.
-Given this observation, one might suggest that importance weighting
-doesn't make a difference: we're estimating $\ex\left[Y\mid X=x\right]$
-no matter which data we're fitting on. Describe a circumstance when
-this suggestion is reasonable, and a circumstance when it is not reasonable\@.
-(Hint: model misspecification)
+we would have $\hat{f}(x)\approx\ex\left[Y\mid X=x,T=1\right]$. Naturally,
+you think that we'll want to try importance weighting to use data
+from $p(x,y\mid R=1)$ to estimate $\ex\left[Y\mid X=x,T=1\right]$,
+which is what we'd get with data from $p(x,y\mid T=1)$. But wait!
+A colleague reminds you that we've assumed $Y\indep T\mid X$ and
+$Y\indep R\mid X$, which implies $\ex\left[Y\mid X=x,R=1\right]=\ex\left[Y\mid X=x,T=1\right]=\ex\left[Y\mid X=x\right]$.
+And so, your colleague claims that importance weighting doesn't make
+a difference: we're estimating $\ex\left[Y\mid X=x\right]$ no matter
+which data we're fitting on. Describe a circumstance when this claim
+is reasonable and a circumstance when it is not reasonable\@. (Hint:
+model misspecification)
 
-\item Give an appropriate importance-weighted empirical risk for $f(x)$
-in terms of a loss function $\ell\left(f(X),Y\right)$ and the observed
-data described above. We'll only use it for learning $\hat{f}$, so
-don't worry about scale factors.
+\item Give an appropriate importance-weighted empirical risk estimate for
+$f(x)$ in terms of a loss function $\ell\left(f(X),Y\right)$ and
+the observed data described above. We'll only use it for learning
+$\hat{f}$, so don't worry about scale factors.
 
 \end{enumerate}
 
 \subsection{Using our regression to forecast the election}
 
 The goal of this section is come up with an estimator for $\pr\left(Y=1\mid T=1\right)$.
+As noted in the introduction, this will be our forecast of the election
+outcome.
 \begin{enumerate}
 \item Let $f(x)=\pr\left(Y=1\mid X=x,T=1\right)=\ex\left[Y\mid X=x,T=1\right]$.
 Show that
@@ -288,9 +317,11 @@ below.
 
 \end{enumerate}
 \item Propose an estimator for $\pr\left(Y=1\mid T=1\right)$ that uses
-our estimated regression function $\hat{f}(x)$, together with $\pi_{t}(x)$,
-$\pi_{r}(x)$, and a new large sample\footnote{In this context, getting samples of just covariates $X$ is generally
-cheap compared to getting samples of $(X,Y)$ pairs.} $X_{1},\ldots,X_{N}$ of covariates from $P$. Your estimator should
+an estimated regression function $\hat{f}(x)$ (such as the one developed
+in Section \ref{subsec:Fitting-the-regression}) as a plug-in estimate
+for $f(x)$, together with $\pi_{t}(x)$, $\pi_{r}(x)$, and a new
+large sample\footnote{In the election context, getting samples of just covariates $X$ is
+generally cheap compared to getting samples of $(X,Y)$ pairs.} $X_{1},\ldots,X_{N}$ of covariates from $P$. Your estimator should
 converge to $\frac{\ex\left[\pi_{t}(X)\hat{f}(X)\right]}{\ex\left[\pi_{t}(X)\right]}$
 as $N\to\infty$, though proving this is optional.
 
